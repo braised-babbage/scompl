@@ -1,8 +1,14 @@
 (in-package #:scompl)
 
+(defun temp-name (name)
+  (gensym
+   (concatenate 'string
+		(symbol-name name)
+		".")))
+
 (defun rename-variable (env var)
   (let* ((orig (var-node-name var))
-	 (new (gensym (symbol-name orig))))
+	 (new (temp-name orig)))
     (values (var-node new)
 	    (extend-env env orig (var-node new)))))
 

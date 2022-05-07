@@ -36,6 +36,7 @@
   (:use :cl)
   (:export
    #:uniquify
+   #:remove-complex-operands
 
    #:interpret
    
