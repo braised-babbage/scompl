@@ -37,8 +37,10 @@
   (:export
    #:uniquify
    #:remove-complex-operands
+   #:explicate-control
 
    #:interpret
+   #:interpret-cvar
    
    #:parse-program
    #:print-program))

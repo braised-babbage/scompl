@@ -16,15 +16,17 @@
        (let ((x y))
 	 x)))))
 
-(defun equalp-after-transform (program transform)
-  (let ((orig (scompl:interpret program))
-	(tran (scompl:interpret (funcall transform program))))
+(defun equalp-after-transform (program &key transform
+					 (eval-orig #'scompl:interpret)
+					 (eval-transformed #'scompl:interpret))
+  (let ((orig (funcall eval-orig program))
+	(tran (funcall eval-transformed (funcall transform program))))
     (equalp orig tran)))
 
 (deftest test-uniquify-program-equivalence ()
   (dolist (source *uniquify-programs*)
     (is (equalp-after-transform (scompl:parse-program source)
-				#'scompl:uniquify))))
+				:transform #'scompl:uniquify))))
 
 (defvar *remove-complex-operands-programs*
   (list
@@ -39,4 +41,21 @@
 			  *remove-complex-operands-programs*))
     (is (equalp-after-transform
 	 (scompl:parse-program source)
-	 #'scompl:remove-complex-operands))))
+	 :transform #'scompl:remove-complex-operands))))
+
+(defvar *explicate-control-programs*
+  (list
+   '(let ((y (let ((x 20))
+	       (let ((z 22))
+		 (+ x z)))))
+     y)
+   '(let ((z 10))
+     (+ z z))
+   '(let ((x (let ((y (- 10 5))) y)))
+     (+ x x))))
+
+(deftest test-explicate-control-program-equivalence ()
+  (dolist (source *explicate-control-programs*)
+    (is (equalp-after-transform (scompl:parse-program source)
+				:transform #'scompl:explicate-control
+				:eval-transformed #'scompl:interpret-cvar))))
