@@ -3,5 +3,10 @@
   :pathname "src/"
   :serial t
   :components ((:file "packages")
-	       (:file "ast")
+	       (:file "interpret")
+	       (:module "langs"
+		:serial t
+		:components ((:file "lint")
+			     (:file "lvar")))
+	       (:file "parser")
 	       (:file "assembler")))

@@ -33,4 +33,11 @@
    #:assemble-and-run))
 
 (defpackage #:scompl
-  (:use :cl))
+  (:use :cl)
+  (:export
+   #:uniquify
+
+   #:interpret
+   
+   #:parse-program
+   #:print-program))
