@@ -55,7 +55,7 @@
   (label nil :type label)
   (instrs nil :type list))
 
-(defstruct (program (:constructor program (blocks)))
+(defstruct (program (:constructor program (info blocks)))
   info
   (blocks nil :type list))
 
@@ -109,6 +109,7 @@
 
 (defvar *example*
   (program
+   nil
    (list
     (basic-block
      (label :start)

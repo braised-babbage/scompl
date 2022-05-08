@@ -50,9 +50,35 @@
     (_ (error "Unexpected ~A" tail))))
 
 (defun select-instructions (cprogram)
-  (x86-64:program
-   (mapcar (lambda (cblk)
-	     (x86-64:basic-block
-	      (x86-64:label (cblock-label cblk))
-	      (select-for-tail (cblock-tail cblk))))
-	   (cprogram-cblocks cprogram))))
+  (flet ((translate-block (cblk)
+	   (x86-64:basic-block
+	    (x86-64:label (cblock-label cblk))
+	    (select-for-tail (cblock-tail cblk)))))
+    (x86-64:program
+	     (acons ':locals-types (recover-types cprogram) nil)
+	     (mapcar #'translate-block (cprogram-cblocks cprogram)))))
+
+
+(defun recover-types (cprogram)
+  (let ((env (make-environment)))    
+    (labels
+	((recover (tail)
+	   (trivia:match tail
+	     ((return-node) nil)
+	     ((seq-node (stmt (assign-node (var var) (val val)))
+			(tail tail2))
+	      (setf (env-ref env (var-node-name var))
+		    (infer-type val))
+	      (recover tail2))
+	     (_ (error "Unexpected tail ~A" tail))))
+	 (infer-type (expr)
+	   (declare (ignore expr))
+	   ;; for now, there's not much to do here...
+	   ':integer))
+      (loop :for cblk :in (cprogram-cblocks cprogram)
+	    :do (recover (cblock-tail cblk)))
+      ;; just to make things a bit nicer, make entries
+      ;; appear in program order
+      (setf (environment-alist env)
+	    (nreverse (environment-alist env)))
+      env)))
