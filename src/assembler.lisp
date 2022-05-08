@@ -4,12 +4,15 @@
   (value nil :type integer))
 (defstruct (reg (:constructor reg (name)))
   (name nil :type symbol))
+;;; useful for before register allocation...
+(defstruct (var (:constructor var (name)))
+  (name nil :type symbol))
 (defstruct (deref (:constructor deref (base offset)))
   (base nil :type symbol)
   (offset nil :type integer))
 
 (deftype arg ()
-  '(or imm reg deref))
+  '(or imm reg deref var))
 
 (defstruct (label (:constructor label (name)))
   (name nil :type symbol))
@@ -66,6 +69,8 @@
   (:method ((obj reg) stream)
     (let ((*print-case* ':downcase))      
       (format stream "%~A" (reg-name obj))))
+  (:method ((obj var) stream)
+    (format stream "~A" (var-name obj)))
   (:method ((obj deref) stream)
     (let ((*print-case* ':downcase))      
       (format stream "~D(%~A)"

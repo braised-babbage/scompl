@@ -5,6 +5,7 @@
    #:imm
    #:reg
    #:deref
+   #:var
    #:label
    
    #:addq
