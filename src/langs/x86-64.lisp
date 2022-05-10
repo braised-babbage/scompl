@@ -113,28 +113,16 @@
    (list
     (basic-block
      (label :start)
-     (list 
-      (movq 10 (deref :rbp -8))
+     (list
+      (callq (label :_read_int) 0)
+      (movq :rax (deref :rbp -8))
       (negq (deref :rbp -8))
       (movq (deref :rbp -8) :rax)
       (addq 52 :rax)
-      (jmp :conclusion)))
-    (basic-block
-     (label :_main)
-     (list
-      (pushq :rbp)
-      (movq :rsp :rbp)
-      (subq 16 :rsp)
-      (jmp :start))
-     t)
-    (basic-block
-     (label :conclusion)
-     (list
-      (addq 16 :rsp)
-      (popq :rbp)
-      (retq))))))
+      (jmp :conclusion))))))
 
-(defun assemble-and-run (program &key (delete t))
+(defun assemble-and-run (program &key (delete t)
+				   input)
   (let ((tmpdir (uiop:temporary-directory))) 
     (uiop:with-current-directory (tmpdir)
       (uiop:with-temporary-file (:stream stream
@@ -143,17 +131,25 @@
 				 :type "S")
 	(let ((bin-file
 		(make-pathname :directory (pathname-directory asm-file)
-			       :name (pathname-name asm-file))))
+			       :name (pathname-name asm-file)))
+	      (runtime-file
+		(make-pathname :directory (pathname-directory asm-file)
+			       :name (concatenate 'string (pathname-name asm-file) "-runtime")
+			       :type "c")))
 	  (print-program program stream)
 	  (finish-output stream)
 	  (unwind-protect
-	       (progn	       
+	       (progn
+		 (uiop:copy-file
+		  (asdf:system-relative-pathname :scompl "src/runtime/runtime.c")
+		  runtime-file)
 		 (uiop:run-program
-		  (list "gcc" (namestring asm-file) "-o" (namestring bin-file)))
-		 (handler-case		     
-		     (uiop:run-program (namestring bin-file))
+		  (list "gcc" (namestring asm-file) (namestring runtime-file) "-o" (namestring bin-file)))
+		 (handler-case
+		     (uiop:run-program (namestring bin-file) :input input)
 		   ;; we encode the result of the program in the error code
 		   (uiop/run-program::subprocess-error (e)
 		     (uiop/run-program::subprocess-error-code e))))
-	    (when delete	      
-	      (uiop:delete-file-if-exists bin-file))))))))
+	    (when delete
+	      (dolist (file (list bin-file runtime-file))		
+		(uiop:delete-file-if-exists bin-file)))))))))

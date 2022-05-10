@@ -35,7 +35,7 @@
 		  (t (list (x86-64:movq s1 sv)
 			   (x86-64:subq s2 sv))))))
 	 ((prim-node (op 'read))
-	  (cons (x86-64:callq (x86-64:label :|read_int|) 0)
+	  (cons (x86-64:callq (x86-64:label :_read_int) 0)
 		(x86-64:movq (x86-64:reg :rax) sv)))
 	 (_ (error "Unexpected statement ~A" stmt)))))))
 

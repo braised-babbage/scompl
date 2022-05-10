@@ -9,11 +9,11 @@
 		:serial t
 		:components ((:file "lint")
 			     (:file "lvar")
-			     (:file "cvar")))
+			     (:file "cvar")
+			     (:file "x86-64")))
 	       (:module "passes"
 		:serial t
 		:components ((:file "uniquify")
 			     (:file "remove-complex-operands")
 			     (:file "explicate-control")))
-	       (:file "parser")
-	       (:file "assembler")))
+	       (:file "parser")))
