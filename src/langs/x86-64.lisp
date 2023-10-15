@@ -25,10 +25,10 @@
 (defmacro define-instruction (name args)
   `(defun ,name ,args
      ,@(loop :for arg :in args
-	     :collect `(cond ((integerp ,arg)
-			      (setf ,arg (imm ,arg)))
-			     ((and (symbolp ,arg) (not (null ,arg)))
-			      (setf ,arg (reg ,arg)))))
+             :collect `(cond ((integerp ,arg)
+                              (setf ,arg (imm ,arg)))
+                             ((and (symbolp ,arg) (not (null ,arg)))
+                              (setf ,arg (reg ,arg)))))
      (instr ',name ,@args)))
 
 (define-instruction addq (src dest))
@@ -74,8 +74,8 @@
   (:method ((obj deref) stream)
     (let ((*print-case* ':downcase))      
       (format stream "~D(%~A)"
-	      (deref-offset obj)
-	      (deref-base obj))))
+              (deref-offset obj)
+              (deref-base obj))))
   (:method ((obj label) stream)
     (let ((*print-case* ':downcase))
       (format stream "~A" (label-name obj))))
@@ -85,7 +85,7 @@
     (when (instr-arg1 obj)
       (format stream "    ~/x86-64::asm-format/" (instr-arg1 obj))
       (when (instr-arg2 obj)
-	(format stream ", ~/x86-64::asm-format/" (instr-arg2 obj))))
+        (format stream ", ~/x86-64::asm-format/" (instr-arg2 obj))))
     (terpri stream))
   (:method ((obj callq) stream)
     (format stream "       callq ~/x86-64::asm-format/~%" (callq-label obj)))
@@ -93,11 +93,11 @@
     (format stream "       jmp ~/x86-64::asm-format/~%" (jmp-label obj)))
   (:method ((obj basic-block) stream)
     (let ((label (basic-block-label obj))
-	  (*print-case* ':downcase))
+          (*print-case* ':downcase))
       (when (basic-block-globalp obj)
-	(format stream "~%      .global ")
-	(print-assembly label stream)
-	(terpri stream))
+        (format stream "~%      .global ")
+        (print-assembly label stream)
+        (terpri stream))
       (print-assembly label stream)
       (format stream ":~%")
       (map nil (lambda (i) (print-assembly i stream)) (basic-block-instrs obj))))
@@ -122,34 +122,43 @@
       (jmp :conclusion))))))
 
 (defun assemble-and-run (program &key (delete t)
-				   input)
-  (let ((tmpdir (uiop:temporary-directory))) 
-    (uiop:with-current-directory (tmpdir)
-      (uiop:with-temporary-file (:stream stream
-				 :pathname asm-file
-				 :directory tmpdir
-				 :type "S")
-	(let ((bin-file
-		(make-pathname :directory (pathname-directory asm-file)
-			       :name (pathname-name asm-file)))
-	      (runtime-file
-		(make-pathname :directory (pathname-directory asm-file)
-			       :name (concatenate 'string (pathname-name asm-file) "-runtime")
-			       :type "c")))
-	  (print-program program stream)
-	  (finish-output stream)
-	  (unwind-protect
-	       (progn
-		 (uiop:copy-file
-		  (asdf:system-relative-pathname :scompl "src/runtime/runtime.c")
-		  runtime-file)
-		 (uiop:run-program
-		  (list "gcc" (namestring asm-file) (namestring runtime-file) "-o" (namestring bin-file)))
-		 (handler-case
-		     (uiop:run-program (namestring bin-file) :input input)
-		   ;; we encode the result of the program in the error code
-		   (uiop/run-program::subprocess-error (e)
-		     (uiop/run-program::subprocess-error-code e))))
-	    (when delete
-	      (dolist (file (list bin-file runtime-file))		
-		(uiop:delete-file-if-exists bin-file)))))))))
+                                   (verbose nil)
+                                   input)
+  (flet ((verbose-msg (&rest args)
+           (when verbose
+             (apply #'format t args))))    
+    (let ((tmpdir (uiop:temporary-directory))) 
+      (uiop:with-current-directory (tmpdir)
+        (uiop:with-temporary-file (:stream stream
+                                   :pathname asm-file
+                                   :directory tmpdir
+                                   :type "S")
+          (let* ((bin-file
+                   (make-pathname :directory (pathname-directory asm-file)
+                                  :name (pathname-name asm-file)))
+                 (runtime-file
+                   (make-pathname :directory (pathname-directory asm-file)
+                                  :name "runtime"
+                                  :type "c"))
+                 (c-compiler-command
+                   (list "gcc" "-arch" "x86_64" (namestring asm-file) (namestring runtime-file) "-o" (namestring bin-file))))
+            (verbose-msg "Writing assembly to ~A~%" asm-file)
+            (print-program program stream)
+            (finish-output stream)
+            (unwind-protect
+                 (progn
+                   (verbose-msg "Copying runtime.c to ~A~%" runtime-file)
+                   (uiop:copy-file
+                    (asdf:system-relative-pathname :scompl "src/runtime/runtime.c")
+                    runtime-file)
+                   (verbose-msg "Compiling with command: ~{~A ~}~%" c-compiler-command)
+                   (uiop:run-program c-compiler-command :error-output *error-output*)
+                   (verbose-msg "Running binary ~A~%" bin-file)
+                   (handler-case
+                       (uiop:run-program (namestring bin-file) :input input)
+                     ;; we encode the result of the program in the error code
+                     (uiop/run-program::subprocess-error (e)
+                       (uiop/run-program::subprocess-error-code e))))
+              (when delete
+                (dolist (file (list bin-file runtime-file))             
+                  (uiop:delete-file-if-exists file))))))))))

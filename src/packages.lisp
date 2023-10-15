@@ -30,15 +30,22 @@
    
    #:print-assembly
    #:print-program
+
+   ;; passes
+   #:assign-homes
+   #:patch-instructions
+   #:wrap-in-standard-boilerplate   
    
    #:assemble-and-run))
 
 (defpackage #:scompl
   (:use :cl)
   (:export
+   ;; passes
    #:uniquify
    #:remove-complex-operands
    #:explicate-control
+   #:select-x86-instructions
 
    #:interpret
    #:interpret-cvar

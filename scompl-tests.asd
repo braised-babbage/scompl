@@ -6,4 +6,4 @@
   :serial t
   :pathname "tests/"
   :components ((:file "package")
-	       (:file "passes-tests")))
+               (:file "passes-tests")))

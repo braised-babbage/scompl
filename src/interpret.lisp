@@ -13,17 +13,17 @@
 (defun (setf env-ref) (val env key)
   (let ((binding (assoc key (environment-alist env))))
     (cond (binding (setf (cdr binding) val))
-	  (t (push (cons key val) (environment-alist env))))
+          (t (push (cons key val) (environment-alist env))))
     val))
 
 (defmethod print-object ((env environment) stream)
   (print-unreadable-object (env stream :type t)
     (when (environment-alist env)
       (format stream "~A: ~A"
-	      (caar (environment-alist env))
-	      (cdar (environment-alist env))))
+              (caar (environment-alist env))
+              (cdar (environment-alist env))))
     (loop :for (key . val) :in (rest (environment-alist env))
-	  :do (format stream ", ~A: ~A" key val))))
+          :do (format stream ", ~A: ~A" key val))))
 
 
 (defclass interpreter ()

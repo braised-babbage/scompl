@@ -1,5 +1,13 @@
 (in-package #:scompl)
 
+;;; Concrete syntax
+;;; 
+;;;   atm ::= int | var
+;;;   exp := atm | (read) | (- atm) | (+ atm atm) | (- atm atm)
+;;;   stmt := var = exp;
+;;;   tail := return exp; | stmt tail
+;;;   Cvar := (label: tail) ...
+
 (defstruct (assign-node (:constructor assign-node (var val)))
   var
   val)
